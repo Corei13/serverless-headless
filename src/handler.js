@@ -82,7 +82,7 @@ export const screenshot = async (event: Object, context: Object, callback: Funct
 
     const { Location } = await s3.upload({
       Bucket: process.env.BUCKET,
-      Key: `screenshots/${url.replace(/[^\w]+/g, '').slice(0, 20)}-${width}.png`,
+      Key: `screenshots/${url.replace(/[^\w]+/g, '').slice(0, 20)}-${width}.jpg`,
       Body: buffer,
       ACL: 'public-read'
     }).promise();

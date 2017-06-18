@@ -123,7 +123,7 @@ export default class Chrome extends ChromeLauncher {
     await Emulation.setVisibleSize({ width, height: fullHeight });
     await Emulation.forceViewport({ x: 0, y: 0, scale: 1 });
 
-    const { data } = await Page.captureScreenshot({ format: 'png' });
+    const { data } = await Page.captureScreenshot({ format: 'jpeg', quality: 60 });
 
     return data;
     // const buffer = new Buffer(screenshot.data, 'base64');

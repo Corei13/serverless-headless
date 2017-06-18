@@ -13,7 +13,7 @@ provider:
   iamRoleStatements:
     - Effect: Allow
       Action:
-        - s3:PutObject
+        - s3:*
       Resource: "arn:aws:s3:::${self:custom.bucket}/*"
 
 package:
@@ -48,9 +48,9 @@ functions:
     timeout: 30
     handler: lib/handler.screenshot
     environment:
-      - BUCKET: ${self:custom.bucket}
-        HEADLESS: true
-        SERVERLESS: true
+      BUCKET: ${self:custom.bucket}
+      HEADLESS: true
+      SERVERLESS: true
 
     events:
       - http:
