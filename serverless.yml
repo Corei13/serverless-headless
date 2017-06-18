@@ -11,6 +11,8 @@ provider:
 package:
   exclude:
     - node_modules/**
+    - '!node_modules/lighthouse/**'
+    - '!node_modules/chrome-remote-interface/**'
   include:
     - lib/**
     - headless_shell
