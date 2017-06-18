@@ -1,4 +1,4 @@
-import path from 'path';
+// @flow
 
 import Chrome from './chrome';
 
@@ -24,15 +24,9 @@ const extract = ({ document }) => {
   return results;
 };
 
-export const run = async (event, context, callback) => {
+export const test = async (event: Object, context: Object, callback: Function) => {
   try {
-    const chromePath = process.env.NODE_ENV === 'headless' ?
-      path.resolve(__dirname, './chrome/headless_shell') : undefined;
-
-    const chrome = new Chrome({
-      headless: process.env.NODE_ENV === 'headless',
-      chromePath
-    });
+    const chrome = new Chrome();
     const pid = await chrome.start();
 
 
@@ -64,6 +58,27 @@ export const run = async (event, context, callback) => {
         results,
         updatedAt: new Date().toISOString()
       }
+    });
+
+    chrome.kill();
+  } catch (err) {
+    callback(err);
+  }
+};
+
+export const screenshot = async (event: Object, context: Object, callback: Function) => {
+  try {
+    const chrome = new Chrome();
+    const pid = await chrome.start();
+
+    const { url, width, height } = event;
+    await chrome.navigate({ url });
+    await chrome.screenshot({ width, height });
+
+    callback(null, {
+      success: true,
+      event,
+      pid,
     });
 
     chrome.kill();

@@ -26,9 +26,20 @@ functions:
     description: serverless-headless/lambda test
     memorySize: 1536
     timeout: 30
-    handler: lib/handler.run
+    handler: lib/handler.test
 
     events:
       - http:
           path: package/lambda/test
+          method: get
+
+  screenshot:
+    description: serverless-headless/lambda screenshot
+    memorySize: 1536
+    timeout: 30
+    handler: lib/handler.screenshot
+
+    events:
+      - http:
+          path: package/lambda/screenshot
           method: get

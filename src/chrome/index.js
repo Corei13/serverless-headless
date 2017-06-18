@@ -1,5 +1,7 @@
 // @flow
 
+import path from 'path';
+import fs from 'fs';
 import EventEmitter from 'events';
 import { Launcher as ChromeLauncher } from 'lighthouse/chrome-launcher/chrome-launcher';
 import CDP from 'chrome-remote-interface';
@@ -8,21 +10,25 @@ import { randomUserAgent } from './user-agents';
 export default class Chrome extends ChromeLauncher {
   port: number;
   runs: number = 0;
-  protocol: { Page: Object, Runtime: Object };
+  protocol: {
+    Page: Object,
+    Runtime: Object,
+    DOM: Object,
+    Emulation: Object
+  };
   listener: EventEmitter = new EventEmitter();
 
   constructor({
-    chromePath,
-    port = 9222, headless = false,
+    port = 9222, headless = process.env.NODE_ENV === 'headless',
     height = 1280, width = 1696
   }: {
-    chromePath?: string,
+    chromePath?: ?string,
     port?: number, headless?: boolean,
     height?: number, width?: number
   } = {}) {
     super({
       port,
-      chromePath,
+      chromePath: process.env.NODE_ENV === 'serverless' ? path.resolve(__dirname, './chrome/headless_shell') : undefined,
       chromeFlags: [
         headless ? '--headless' : '',
         `--user-agent="${randomUserAgent()}"`,
@@ -84,6 +90,50 @@ export default class Chrome extends ChromeLauncher {
     this.runs += 1;
 
     return { connectedAt, loadedAt };
+  }
+
+  async screenshot({
+    width = 1440, height = 900
+  }: {
+    width: number, height: number
+  } = {}) {
+    // If the `full` CLI option was passed, we need to measure the height of
+    // the rendered page and use Emulation.setVisibleSize
+    const { DOM, Emulation, Page } = this.protocol;
+    await DOM.enable();
+
+    const deviceMetrics = {
+      width: width,
+      height: height,
+      deviceScaleFactor: 0,
+      mobile: false,
+      fitWindow: false,
+    };
+    await Emulation.setDeviceMetricsOverride(deviceMetrics);
+    await Emulation.setVisibleSize({ width, height });
+
+    const { root: { nodeId: documentNodeId }} = await DOM.getDocument();
+    const { nodeId: bodyNodeId } = await DOM.querySelector({
+      selector: 'body',
+      nodeId: documentNodeId
+    });
+    const { model: { height: fullHeight }} = await DOM.getBoxModel({ nodeId: bodyNodeId });
+
+    await Emulation.setVisibleSize({ width, height: fullHeight });
+    await Emulation.forceViewport({ x: 0, y: 0, scale: 1 });
+
+    const screenshot = await Page.captureScreenshot({ format: 'png' });
+    const buffer = new Buffer(screenshot.data, 'base64');
+    return new Promise((resolve, reject) => fs.writeFile(
+      '/tmp/output.png', buffer, 'base64', err => {
+        if (err) {
+          reject(err);
+        } else {
+          console.log('Screenshot saved');
+          resolve();
+        }
+      }
+    ));
   }
 
   async evaluate(fn: Function, context: Object = {}, evaluateArgs: Object = {}) {
