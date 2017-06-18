@@ -80,6 +80,7 @@ export const screenshot = async (event: Object, context: Object, callback: Funct
       headers: {
         'Content-Type': 'image/png'
       },
+      isBase64Encoded: true,
       body: await chrome.screenshot({ width: Number(width), height: Number(height) })
     });
 
