@@ -11,7 +11,7 @@ provider:
     - Effect: Allow
       Action:
         - s3:PutObject
-      Resource: "arn:aws:s3:::backpack-lambda/*"
+      Resource: "arn:aws:s3:::${self:screenshot.bucket}/*"
 
 package:
   exclude:
@@ -44,6 +44,8 @@ functions:
     memorySize: 1536
     timeout: 30
     handler: lib/handler.screenshot
+    environment:
+      BUCKET: ${self:screenshot.bucket}
 
     events:
       - http:
