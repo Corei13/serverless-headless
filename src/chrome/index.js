@@ -19,7 +19,7 @@ export default class Chrome extends ChromeLauncher {
   listener: EventEmitter = new EventEmitter();
 
   constructor({
-    port = 9222, headless = process.env.NODE_ENV === 'headless',
+    port = 9222, headless = !!process.env.HEADLESS,
     height = 1280, width = 1696
   }: {
     chromePath?: ?string,
@@ -28,7 +28,7 @@ export default class Chrome extends ChromeLauncher {
   } = {}) {
     super({
       port,
-      chromePath: process.env.NODE_ENV === 'serverless' ? path.resolve(__dirname, './chrome/headless_shell') : undefined,
+      chromePath: process.env.SERVERLESS ? path.resolve(__dirname, './chrome/headless_shell') : undefined,
       chromeFlags: [
         headless ? '--headless' : '',
         `--user-agent="${randomUserAgent()}"`,
