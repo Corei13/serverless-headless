@@ -28,7 +28,7 @@ export default class Chrome extends ChromeLauncher {
   } = {}) {
     super({
       port,
-      chromePath: process.env.SERVERLESS ? path.resolve(__dirname, './chrome/headless_shell') : undefined,
+      chromePath: process.env.SERVERLESS ? path.resolve(__dirname, './headless_shell') : undefined,
       chromeFlags: [
         headless ? '--headless' : '',
         `--user-agent="${randomUserAgent()}"`,
@@ -109,6 +109,7 @@ export default class Chrome extends ChromeLauncher {
       mobile: false,
       fitWindow: false,
     };
+
     await Emulation.setDeviceMetricsOverride(deviceMetrics);
     await Emulation.setVisibleSize({ width, height });
 
