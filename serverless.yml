@@ -10,13 +10,16 @@ provider:
 
 package:
   exclude:
+    - src/**
     - node_modules/**
     - '!node_modules/lighthouse/**'
     - '!node_modules/chrome-remote-interface/**'
+    - '!node_modules/mkdirp/**'
+    - '!node_modules/debug/**'
+    - '!node_modules/rimraf/**'
+    - '!node_modules/ms/**'
   include:
     - lib/**
-    - headless_shell
-    - libosmesa.so
 
 functions:
   test:

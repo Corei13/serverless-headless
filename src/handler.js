@@ -12,8 +12,15 @@ export const run = async (event, context, callback) => {
       chromePath
     });
     const pid = await chrome.start();
-    console.log('Chrome started with pid:', pid);
-    callback(null, { success: true, event, pid });
+    console.log(event.url);
+    await chrome.navigate({ url: event.url });
+
+    callback(null, {
+      success: true,
+      event,
+      pid,
+      result: await chrome.evaluate(({ document }) => document.querySelector('title').textContent)
+    });
 
     chrome.kill();
   } catch (err) {
