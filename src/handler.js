@@ -80,7 +80,7 @@ export const screenshot = async (event: Object, context: Object, callback: Funct
     const data = await chrome.screenshot({ width: Number(width), height: Number(height) });
     const buffer = new Buffer(data, 'base64');
 
-    await s3.putObject({
+    const { Location } = await s3.upload({
       Bucket: process.env.BUCKET,
       Key: `screenshots/${url.replace(/[^\w]+/g, '').slice(0, 20)}-${width}.png`,
       Body: buffer,
@@ -89,13 +89,7 @@ export const screenshot = async (event: Object, context: Object, callback: Funct
 
     callback(null, {
       statusCode: 302,
-      headers: {
-        'Location:': s3.getSignedUrl('getObject', {
-          Bucket: process.env.BUCKET,
-          Key: `screenshots/${url.replace(/[^\w]+/g, '').slice(0, 20)}-${width}.png`,
-          Expires: 8640000
-        })
-      }
+      headers: { Location }
     });
 
     chrome.kill();

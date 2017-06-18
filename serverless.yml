@@ -1,5 +1,8 @@
 service: serverless-chrome-package-lambda-test
 
+custom:
+  bucket: ${env:BUCKET}
+
 provider:
   name: aws
   runtime: nodejs6.10
@@ -11,7 +14,7 @@ provider:
     - Effect: Allow
       Action:
         - s3:PutObject
-      Resource: "arn:aws:s3:::${self:screenshot.bucket}/*"
+      Resource: "arn:aws:s3:::${self:custom.bucket}/*"
 
 package:
   exclude:
@@ -45,7 +48,9 @@ functions:
     timeout: 30
     handler: lib/handler.screenshot
     environment:
-      BUCKET: ${self:screenshot.bucket}
+      - BUCKET: ${self:custom.bucket}
+        HEADLESS: true
+        SERVERLESS: true
 
     events:
       - http:
