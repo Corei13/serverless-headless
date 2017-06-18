@@ -27,10 +27,10 @@ const extract = ({ document }) => {
 export const test = async (event: Object, context: Object, callback: Function) => {
   try {
     const chrome = new Chrome();
-    const pid = await chrome.start();
+    await chrome.start();
 
 
-    const { keyword, page } = event;
+    const { keyword, page } = event.queryStringParameters;
     const ctime = Math.round(Date.now() / 1000 - 15 + Math.random() * 5);
     const url = page === 1
       ? `https://www.amazon.com/s/ref=sr_nr_p_85_0?fst=as:off&rh=i:aps,k:${keyword},p_85:2470955011&keywords=${keyword}&ie=UTF8&qid=${ctime}&rnid=2470954011`
@@ -42,10 +42,11 @@ export const test = async (event: Object, context: Object, callback: Function) =
     const foundAt = Date.now();
 
     callback(null, {
-      success: true,
-      event,
-      pid,
-      result: {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
         query: keyword,
         page,
         elapsed: {
@@ -57,7 +58,7 @@ export const test = async (event: Object, context: Object, callback: Function) =
         totalResults: results.length,
         results,
         updatedAt: new Date().toISOString()
-      }
+      })
     });
 
     chrome.kill();
@@ -69,16 +70,17 @@ export const test = async (event: Object, context: Object, callback: Function) =
 export const screenshot = async (event: Object, context: Object, callback: Function) => {
   try {
     const chrome = new Chrome();
-    const pid = await chrome.start();
+    await chrome.start();
 
-    const { url, width, height } = event;
+    const { url, width, height } = event.queryStringParameters;
     await chrome.navigate({ url });
-    await chrome.screenshot({ width, height });
 
     callback(null, {
-      success: true,
-      event,
-      pid,
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'image/png'
+      },
+      body: await chrome.screenshot({ width, height })
     });
 
     chrome.kill();

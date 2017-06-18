@@ -1,7 +1,7 @@
 // @flow
 
 import path from 'path';
-import fs from 'fs';
+// import fs from 'fs';
 import EventEmitter from 'events';
 import { Launcher as ChromeLauncher } from 'lighthouse/chrome-launcher/chrome-launcher';
 import CDP from 'chrome-remote-interface';
@@ -123,18 +123,20 @@ export default class Chrome extends ChromeLauncher {
     await Emulation.setVisibleSize({ width, height: fullHeight });
     await Emulation.forceViewport({ x: 0, y: 0, scale: 1 });
 
-    const screenshot = await Page.captureScreenshot({ format: 'png' });
-    const buffer = new Buffer(screenshot.data, 'base64');
-    return new Promise((resolve, reject) => fs.writeFile(
-      '/tmp/output.png', buffer, 'base64', err => {
-        if (err) {
-          reject(err);
-        } else {
-          console.log('Screenshot saved');
-          resolve();
-        }
-      }
-    ));
+    const { data } = await Page.captureScreenshot({ format: 'png' });
+
+    return data;
+    // const buffer = new Buffer(screenshot.data, 'base64');
+    // return new Promise((resolve, reject) => fs.writeFile(
+    //   '/tmp/output.png', buffer, 'base64', err => {
+    //     if (err) {
+    //       reject(err);
+    //     } else {
+    //       console.log('Screenshot saved');
+    //       resolve();
+    //     }
+    //   }
+    // ));
   }
 
   async evaluate(fn: Function, context: Object = {}, evaluateArgs: Object = {}) {
