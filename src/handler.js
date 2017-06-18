@@ -1,5 +1,6 @@
 // @flow
 
+import AWS from 'aws-sdk';
 import Chrome from './chrome';
 
 const extract = ({ document }) => {
@@ -75,13 +76,23 @@ export const screenshot = async (event: Object, context: Object, callback: Funct
     const { url, width, height } = event.queryStringParameters;
     await chrome.navigate({ url });
 
+    const s3 = new AWS.S3();
+    const data = await chrome.screenshot({ width: Number(width), height: Number(height) });
+    const buffer = new Buffer(screenshot.data, 'base64');
+
+    await s3.putObject({
+      Bucket: 'backpack-lambda',
+      Key: 'screenshots/' + url.replace(/[^\w]+/g, '').slice(0, 20) + '.png',
+      Body: buffer,
+    }).promise();
+
     callback(null, {
       statusCode: 200,
       headers: {
         'Content-Type': 'image/png'
       },
       isBase64Encoded: true,
-      body: await chrome.screenshot({ width: Number(width), height: Number(height) })
+      body: data
     });
 
     chrome.kill();

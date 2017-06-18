@@ -183,7 +183,7 @@ asynckit@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
 
-aws-sdk@^2.7.13:
+aws-sdk@^2.7.13, aws-sdk@^2.72.0:
   version "2.72.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.72.0.tgz#59021c14e354f34a4fb4f229ac10f8e36428f4d4"
   dependencies:
