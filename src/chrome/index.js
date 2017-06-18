@@ -89,7 +89,7 @@ export default class Chrome extends ChromeLauncher {
   async evaluate(fn: Function, context: Object = {}, evaluateArgs: Object = {}) {
     const { Runtime } = this.protocol;
     const expression = `(${fn.toString()})({ document, window }, ${JSON.stringify(context)})`;
-    // console.log(expression);
+    console.log(expression);
     const result = await Runtime.evaluate({ expression, returnByValue: true, ...evaluateArgs });
     console.log(result);
     return result.result.value;
