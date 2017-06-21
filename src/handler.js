@@ -1,6 +1,7 @@
 // @flow
 
 import fs from 'fs';
+import rimraf from 'rimraf';
 import AWS from 'aws-sdk';
 import Chrome from './chrome';
 
@@ -42,9 +43,9 @@ export const test = async (event: Object, context: Object, callback: Function) =
     const { connectedAt, loadedAt } = await chrome.navigate({ url });
     const results = await chrome.evaluate(extract);
     const foundAt = Date.now();
+    chrome.kill();
 
-    const files = fs.readdirSync('/tmp');
-    console.log(files);
+    console.log('before', fs.readdirSync('/tmp'));
 
     callback(null, {
       statusCode: 200,
@@ -66,9 +67,11 @@ export const test = async (event: Object, context: Object, callback: Function) =
       })
     });
 
-    chrome.kill();
   } catch (err) {
-    callback(err);
+    rimraf('/tmp/*', (err2) => {
+      console.log('after err', fs.readdirSync('/tmp'));
+      callback(err2 || err);
+    });
   }
 };
 
