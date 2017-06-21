@@ -45,9 +45,6 @@ export const test = async (event: Object, context: Object, callback: Function) =
     const foundAt = Date.now();
     chrome.kill();
 
-    console.log('before', fs.readdirSync('/tmp'));
-    rimraf('/tmp/*', () => console.log('after', fs.readdirSync('/tmp')));
-
     callback(null, {
       statusCode: 200,
       headers: {
@@ -67,6 +64,14 @@ export const test = async (event: Object, context: Object, callback: Function) =
         updatedAt: new Date().toISOString()
       })
     });
+
+    console.log('before', fs.readdirSync('/tmp'));
+    await Promise.all(
+      fs.readdirSync('/tmp')
+        .filter(f => f.includes('headless') || f.includes('lighthouse'))
+        .map(dir => new Promise((resolve, reject) =>
+          rimraf(`/tmp/${dir}`, (err) => err ? reject(err) : resolve()))));
+    console.log('after', fs.readdirSync('/tmp'));
 
   } catch (err) {
     callback(err);
