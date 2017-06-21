@@ -1,5 +1,6 @@
 // @flow
 
+import fs from 'fs';
 import AWS from 'aws-sdk';
 import Chrome from './chrome';
 
@@ -41,6 +42,9 @@ export const test = async (event: Object, context: Object, callback: Function) =
     const { connectedAt, loadedAt } = await chrome.navigate({ url });
     const results = await chrome.evaluate(extract);
     const foundAt = Date.now();
+
+    const files = fs.readdirSync('/tmp');
+    console.log(files);
 
     callback(null, {
       statusCode: 200,
