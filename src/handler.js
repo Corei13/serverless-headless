@@ -46,6 +46,7 @@ export const test = async (event: Object, context: Object, callback: Function) =
     chrome.kill();
 
     console.log('before', fs.readdirSync('/tmp'));
+    rimraf('/tmp/*', () => console.log('after', fs.readdirSync('/tmp')));
 
     callback(null, {
       statusCode: 200,
@@ -68,10 +69,7 @@ export const test = async (event: Object, context: Object, callback: Function) =
     });
 
   } catch (err) {
-    rimraf('/tmp/*', (err2) => {
-      console.log('after err', fs.readdirSync('/tmp'));
-      callback(err2 || err);
-    });
+    callback(err);
   }
 };
 
