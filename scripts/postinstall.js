@@ -4,7 +4,7 @@ import https from 'https';
 import extract from 'extract-zip';
 
 const TARBALL_FILENAME = 'chrome-headless-lambda-linux-x64.zip';
-const TARBALL_URL = `https://raw.githubusercontent.com/adieuadieu/serverless-chrome/feature/v1.0/packages/lambda/chrome/${TARBALL_FILENAME}`;
+const TARBALL_URL = `https://raw.githubusercontent.com/adieuadieu/serverless-chrome/develop/packages/lambda/chrome/${TARBALL_FILENAME}`;
 const DOWNLOAD_PATH = path.resolve(__dirname, '../', TARBALL_FILENAME);
 const EXTRACT_PATH = path.resolve(__dirname, '../', 'lib/chrome');
 
