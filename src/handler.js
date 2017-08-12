@@ -33,11 +33,15 @@ export const test = async (event: Object, context: Object, callback: Function) =
     await chrome.start();
 
 
-    const { keyword, page } = event.queryStringParameters;
+    const { keyword, page, node } = event.queryStringParameters;
     const ctime = Math.round(Date.now() / 1000 - 15 + Math.random() * 5);
-    const url = page === 1
-      ? `https://www.amazon.com/s/ref=sr_nr_p_85_0?fst=as:off&rh=i:aps,k:${keyword},p_85:2470955011&keywords=${keyword}&ie=UTF8&qid=${ctime}&rnid=2470954011`
-      : `https://www.amazon.com/s/ref=sr_pg_${page}?fst=as:off&rh=i:aps,k:${keyword},p_85:2470955011&page=${page}&keywords=${keyword}&ie=UTF8&qid=${ctime}`;
+    const url = node !== undefined
+      ? page === 1
+        ? `https://www.amazon.com/s/ref=sr_nr_p_85_0?fst=as:off&rh=n:${node},p_85:2470955011&ie=UTF8&qid=${ctime}&rnid=2470954011`
+        : `https://www.amazon.com/s/ref=sr_pg_${page}?fst=as:off&rh=n:${node},p_85:2470955011&page=${page}&ie=UTF8&qid=${ctime}`
+      : page === 1
+        ? `https://www.amazon.com/s/ref=sr_nr_p_85_0?fst=as:off&rh=i:aps,k:${keyword},p_85:2470955011&keywords=${keyword}&ie=UTF8&qid=${ctime}&rnid=2470954011`
+        : `https://www.amazon.com/s/ref=sr_pg_${page}?fst=as:off&rh=i:aps,k:${keyword},p_85:2470955011&page=${page}&keywords=${keyword}&ie=UTF8&qid=${ctime}`;
 
     const start = Date.now();
     const { connectedAt, loadedAt } = await chrome.navigate({ url });
