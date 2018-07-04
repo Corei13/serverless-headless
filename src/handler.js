@@ -114,7 +114,7 @@ export const screenshot = async (event: Object, context: Object, callback: Funct
 
 export const amazon = async (event: Object, context: Object, callback: Function) => {
   try {
-    const results = await scrape(event.queryStringParameters.asin);
+    const { chrome, results } = await scrape(event.queryStringParameters.asin);
 
     callback(null, {
       statusCode: 200,
@@ -129,6 +129,8 @@ export const amazon = async (event: Object, context: Object, callback: Function)
         .filter(f => f.includes('headless') || f.includes('lighthouse'))
         .map(dir => new Promise((resolve, reject) =>
           rimraf(`/tmp/${dir}`, (err) => err ? reject(err) : resolve()))));
+
+    await chrome.kill();
 
   } catch (err) {
     callback(err);

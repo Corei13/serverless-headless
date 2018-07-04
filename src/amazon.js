@@ -92,21 +92,22 @@ export const scrape = async (asin: string) => {
   const { connectedAt, loadedAt } = await chrome.navigate({ url });
   const results = await chrome.evaluate(extract, { asin });
   const foundAt = Date.now();
-  // await chrome.kill();
-  // console.log(chrome.kill());
 
   console.dir(results, { depth: null });
 
   return {
-    asin,
-    elapsed: {
-      connect: connectedAt - start,
-      fetch: loadedAt - connectedAt,
-      find: foundAt - loadedAt,
-      total: foundAt - start
-    },
-    totalResults: results.length,
-    results,
-    updatedAt: new Date().toISOString()
+    chrome,
+    results: {
+      asin,
+      elapsed: {
+        connect: connectedAt - start,
+        fetch: loadedAt - connectedAt,
+        find: foundAt - loadedAt,
+        total: foundAt - start
+      },
+      totalResults: results.length,
+      results,
+      updatedAt: new Date().toISOString()
+    }
   };
 };
