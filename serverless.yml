@@ -5,7 +5,7 @@ custom:
 
 provider:
   name: aws
-  runtime: nodejs6.10
+  runtime: nodejs8.10
   stage: dev
   region: us-west-2
   environment:
@@ -20,39 +20,67 @@ package:
   exclude:
     - src/**
     - node_modules/**
-    - '!node_modules/lighthouse/**'
-    - '!node_modules/chrome-remote-interface/**'
-    - '!node_modules/mkdirp/**'
-    - '!node_modules/debug/**'
-    - '!node_modules/rimraf/**'
-    - '!node_modules/ms/**'
     - '!node_modules/aws-sdk/**'
+    - '!node_modules/balanced-match/**'
+    - '!node_modules/brace-expansion/**'
+    - '!node_modules/chrome-launcher/**'
+    - '!node_modules/chrome-remote-interface/**'
+    - '!node_modules/concat-map/**'
+    - '!node_modules/debug/**'
+    - '!node_modules/fs.realpath/**'
+    - '!node_modules/glob/**'
+    - '!node_modules/inflight/**'
+    - '!node_modules/inherits/**'
+    - '!node_modules/is-wsl/**'
+    - '!node_modules/jmespath/**'
+    - '!node_modules/lighthouse-logger/**'
+    - '!node_modules/minimatch/**'
+    - '!node_modules/mkdirp/**'
+    - '!node_modules/ms/**'
+    - '!node_modules/once/**'
+    - '!node_modules/path-is-absolute/**'
+    - '!node_modules/rimraf/**'
+    - '!node_modules/sax/**'
+    - '!node_modules/wrappy/**'
+    - '!node_modules/xml2js/**'
+    - '!node_modules/xmlbuilder/**'
   include:
     - lib/**
 
 functions:
-  test:
-    description: serverless-headless/lambda test
+  # test:
+  #   description: serverless-headless/lambda test
+  #   memorySize: 1536
+  #   timeout: 30
+  #   handler: lib/handler.test
+  #
+  #   events:
+  #     - http:
+  #         path: package/lambda/test
+  #         method: get
+  #
+  # screenshot:
+  #   description: serverless-headless/lambda screenshot
+  #   memorySize: 1536
+  #   timeout: 30
+  #   handler: lib/handler.screenshot
+  #   environment:
+  #     BUCKET: ${self:custom.bucket}
+  #     HEADLESS: true
+  #     SERVERLESS: true
+  #
+  #   events:
+  #     - http:
+  #         path: package/lambda/screenshot
+  #         method: get
+
+  amazon:
+    description: serverless-headless/lambda amazon
     memorySize: 1536
-    timeout: 30
-    handler: lib/handler.test
+    timeout: 10
+    handler: lib/handler.amazon
 
     events:
       - http:
-          path: package/lambda/test
-          method: get
-
-  screenshot:
-    description: serverless-headless/lambda screenshot
-    memorySize: 1536
-    timeout: 30
-    handler: lib/handler.screenshot
-    environment:
-      BUCKET: ${self:custom.bucket}
-      HEADLESS: true
-      SERVERLESS: true
-
-    events:
-      - http:
-          path: package/lambda/screenshot
+          path: package/lambda/amazon
           method: get

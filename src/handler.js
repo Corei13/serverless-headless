@@ -5,6 +5,8 @@ import rimraf from 'rimraf';
 import AWS from 'aws-sdk';
 import Chrome from './chrome';
 
+import { scrape } from './amazon';
+
 const extract = ({ document }) => {
   const results = [];
   document.body
@@ -47,7 +49,7 @@ export const test = async (event: Object, context: Object, callback: Function) =
     const { connectedAt, loadedAt } = await chrome.navigate({ url });
     const results = await chrome.evaluate(extract);
     const foundAt = Date.now();
-    chrome.kill();
+    await chrome.kill();
 
     callback(null, {
       statusCode: 200,
@@ -105,6 +107,29 @@ export const screenshot = async (event: Object, context: Object, callback: Funct
     });
 
     chrome.kill();
+  } catch (err) {
+    callback(err);
+  }
+};
+
+export const amazon = async (event: Object, context: Object, callback: Function) => {
+  try {
+    const results = await scrape(event.queryStringParameters.asin);
+
+    callback(null, {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(results)
+    });
+
+    await Promise.all(
+      fs.readdirSync('/tmp')
+        .filter(f => f.includes('headless') || f.includes('lighthouse'))
+        .map(dir => new Promise((resolve, reject) =>
+          rimraf(`/tmp/${dir}`, (err) => err ? reject(err) : resolve()))));
+
   } catch (err) {
     callback(err);
   }

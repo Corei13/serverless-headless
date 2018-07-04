@@ -3,12 +3,12 @@
 import path from 'path';
 // import fs from 'fs';
 import EventEmitter from 'events';
-import { Launcher as ChromeLauncher } from 'lighthouse/chrome-launcher/chrome-launcher';
+// import { launch } from 'chrome-launcher';
 import CDP from 'chrome-remote-interface';
+import launchChrome from '@serverless-chrome/lambda';
 import { randomUserAgent } from './user-agents';
 
-export default class Chrome extends ChromeLauncher {
-  port: number;
+export default class Chrome {
   runs: number = 0;
   protocol: {
     Page: Object,
@@ -17,68 +17,78 @@ export default class Chrome extends ChromeLauncher {
     Emulation: Object
   };
   listener: EventEmitter = new EventEmitter();
+  flags: Array<string> = [];
+  kill: Function = () => { throw Error('Not implemented'); };
 
   constructor({
-    port = 9222, headless = !!process.env.HEADLESS,
-    height = 1280, width = 1696
+    headless = !!process.env.HEADLESS,
+    height = 1280, width = 1696,
+    // proxy
   }: {
-    chromePath?: ?string,
-    port?: number, headless?: boolean,
-    height?: number, width?: number
+    headless?: boolean,
+    height?: number, width?: number,
+    // proxy?: string
   } = {}) {
-    super({
-      port,
-      chromePath: process.env.SERVERLESS ? path.resolve(__dirname, './headless_shell') : undefined,
-      chromeFlags: [
-        headless ? '--headless' : '',
-        `--user-agent="${randomUserAgent()}"`,
-        `--window-size=${height},${width}`,
-        '--disable-gpu',
-        '--enable-logging',
-        '--log-level=0',
-        '--v=99',
-        '--single-process', // fixme
-        '--no-sandbox',
-      ]
-    });
-    this.port = port;
+    this.flags = [
+      headless ? '--headless' : '',
+      // proxy ? `--proxy-server="${proxy}"` : '',
+      // proxy ? '--host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE 127.0.0.1"' : '', // FIXME
+      `--user-agent="${randomUserAgent()}"`,
+      `--window-size=${height},${width}`,
+      '--disable-gpu',
+      '--enable-logging',
+      '--log-level=0',
+      '--v=99',
+	    // '--single-process', // fixme
+	    '--no-sandbox'
+    ];
+  }
+
+  async launch() {
+    console.log(this.flags);
+    return new Promise((resolve, reject) =>
+      launchChrome({
+        // chromePath: process.env.SERVERLESS ? path.resolve(__dirname, './headless_shell') : undefined,
+        flags: this.flags
+      }).then(resolve, reject)
+    );
   }
 
   async start() {
-    await this.launch();
+    const chrome = await this.launch();
+    this.kill = () => chrome.kill();
 
-    const tabs = await CDP.List({ port: this.port });
-    console.log(tabs.find(t => t.type === 'page'));
+    console.log('Chrome started with port', chrome.port);
+
+    const tabs = await CDP.List({ port: chrome.port });
+    // console.log(tabs.find(t => t.type === 'page'));
     this.protocol = await new Promise((resolve, reject) =>
-      CDP({ port: this.port, target: tabs.find(t => t.type === 'page') }, protocol => resolve(protocol))
+      CDP({ port: chrome.port, target: tabs.find(t => t.type === 'page') }, protocol => resolve(protocol))
         .on('error', err => reject(Error('Cannot connect to Chrome:' + err)))
     );
-
-    // HACK
-    if (this.chrome) {
-      this.chrome.removeAllListeners();
-      this.chrome.unref();
-    }
 
     const { Page, Runtime } = this.protocol;
     await Promise.all([Page.enable(), Runtime.enable()]);
 
-    Page.loadEventFired((...args) => {
-      console.log('pageLoaded with', args);
-      this.listener.emit('pageLoaded', ...args);
+    // Page.loadEventFired((...args) => {
+    //   this.listener.emit('pageLoaded', ...args);
+    // });
+
+    Page.domContentEventFired((...args) => {
+      this.listener.emit('domContentEventFired', ...args);
     });
 
-    return this.pid;
+    return chrome.pid;
   }
 
   untilLoaded() {
     return new Promise(resolve => {
-      const listener = () => {
-        this.listener.removeListener('pageLoaded', listener);
-        console.log('Holy shit! Page loaded');
+      const listener = event => () => {
+        this.listener.removeListener(event, listener(event));
+        console.log('New event:', event);
         resolve();
       };
-      this.listener.on('pageLoaded', listener);
+      this.listener.on('domContentEventFired', listener('domContentEventFired'));
     });
   }
 
@@ -92,11 +102,22 @@ export default class Chrome extends ChromeLauncher {
     return { connectedAt, loadedAt };
   }
 
-  async screenshot({
-    width = 1440, height = 900
-  }: {
-    width: number, height: number
-  } = {}) {
+  async evaluate(fn: Function, context: Object = {}, evaluateArgs: Object = {}) {
+    const { Runtime } = this.protocol;
+    const expression = `(${fn.toString()})({ document, window }, ${JSON.stringify(context)})`;
+    const result = await Runtime.evaluate({ expression, returnByValue: true, ...evaluateArgs });
+    // logger.info('Expression:');
+    // logger.debug(expression);
+    // logger.info('Result:');
+    // logger.debug(result);
+    return result.result.value;
+  }
+
+  evaluateAsync(fn: Function, context: Object = {}) {
+    return this.evaluate(fn, context, { awaitPromise: true });
+  }
+
+  async screenshot({ width = 1440, height = 900 }: { width: number, height: number } = {}) {
     // If the `full` CLI option was passed, we need to measure the height of
     // the rendered page and use Emulation.setVisibleSize
     const { DOM, Emulation, Page } = this.protocol;
@@ -137,18 +158,5 @@ export default class Chrome extends ChromeLauncher {
     //     }
     //   }
     // ));
-  }
-
-  async evaluate(fn: Function, context: Object = {}, evaluateArgs: Object = {}) {
-    const { Runtime } = this.protocol;
-    const expression = `(${fn.toString()})({ document, window }, ${JSON.stringify(context)})`;
-    console.log(expression);
-    const result = await Runtime.evaluate({ expression, returnByValue: true, ...evaluateArgs });
-    console.log(result);
-    return result.result.value;
-  }
-
-  evaluateAsync(fn: Function, context: Object = {}) {
-    return this.evaluate(fn, context, { awaitPromise: true });
   }
 }
