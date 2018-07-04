@@ -114,7 +114,7 @@ export const screenshot = async (event: Object, context: Object, callback: Funct
 
 export const amazon = async (event: Object, context: Object, callback: Function) => {
   try {
-    context.callbackWaitsForEmtpyEventLoop = false;
+    context.callbackWaitsForEmptyEventLoop = false;
     const { results } = await scrape(event.queryStringParameters.asin);
 
     callback(null, {
