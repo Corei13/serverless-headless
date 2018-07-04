@@ -10,7 +10,11 @@ const extract = ({ document, window: { URL } }, { asin }) => {
   // TODO: make sure asin is not parent asin
 
   const productDetails = [].map.call(
-    $s('#detailBullets_feature_div>ul>li, #detail-bullets .content>ul>li'),
+    $s([
+      '#detailBullets_feature_div>ul>li',
+      '#detail-bullets .content>ul>li',
+      '#productDetails_detailBullets_sections1>tbody>tr'
+    ].join(',')),
     e => e.textContent.trim().replace(/\s+/g, ' ')
   );
 
@@ -27,8 +31,8 @@ const extract = ({ document, window: { URL } }, { asin }) => {
 
     // TODO: handle book description
     description: () => [
-      $('#aplus .aplus-v2') && $('#aplus .aplus-v2').innerHTML,
-      $('#productDescription') && $('#productDescription').innerHTML
+      $('#aplus .aplus-v2') && $('#aplus .aplus-v2').innerHTML.trim(),
+      $('#productDescription') && $('#productDescription').innerHTML.trim()
     ].filter(d => d),
 
     // salePrice,
@@ -36,7 +40,10 @@ const extract = ({ document, window: { URL } }, { asin }) => {
     listPrice: () => $('#listPriceLegalMessage') &&
       $('#listPriceLegalMessage').previousElementSibling.textContent.trim(),
 
-    weight: () => productDetails.find(d => d.includes('Shipping Weight')),
+    weight: [
+      () => productDetails.find(d => d.includes('Shipping Weight')),
+      () => productDetails.find(d => d.includes('Item Weight')),
+    ],
     dimensions: () => productDetails.find(d => d.includes('Product Dimensions')),
 
     images: () => [].map.call(
