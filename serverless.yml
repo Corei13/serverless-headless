@@ -20,6 +20,7 @@ package:
   exclude:
     - src/**
     - node_modules/**
+    - '!node_modules/@serverless-chrome/**'
     - '!node_modules/aws-sdk/**'
     - '!node_modules/balanced-match/**'
     - '!node_modules/brace-expansion/**'
