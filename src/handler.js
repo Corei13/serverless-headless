@@ -114,7 +114,8 @@ export const screenshot = async (event: Object, context: Object, callback: Funct
 
 export const amazon = async (event: Object, context: Object, callback: Function) => {
   try {
-    const { chrome, results } = await scrape(event.queryStringParameters.asin);
+    context.callbackWaitsForEmtpyEventLoop = false;
+    const { results } = await scrape(event.queryStringParameters.asin);
 
     callback(null, {
       statusCode: 200,
@@ -124,13 +125,13 @@ export const amazon = async (event: Object, context: Object, callback: Function)
       body: JSON.stringify(results)
     });
 
-    await Promise.all(
-      fs.readdirSync('/tmp')
-        .filter(f => f.includes('headless') || f.includes('lighthouse'))
-        .map(dir => new Promise((resolve, reject) =>
-          rimraf(`/tmp/${dir}`, (err) => err ? reject(err) : resolve()))));
-
-    await chrome.kill();
+    // await Promise.all(
+    //   fs.readdirSync('/tmp')
+    //     .filter(f => f.includes('headless') || f.includes('lighthouse'))
+    //     .map(dir => new Promise((resolve, reject) =>
+    //       rimraf(`/tmp/${dir}`, (err) => err ? reject(err) : resolve()))));
+    //
+    // await chrome.kill();
 
   } catch (err) {
     callback(err);
