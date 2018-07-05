@@ -94,7 +94,7 @@ const extract = ({ document, window: { URL } }, { asin }) => {
       }
       return { success: false, errors };
     })()
-  }), {}));
+  }), {})).pop();
 };
 
 
@@ -121,7 +121,7 @@ export const scrape = async (asins: Array<string>) => {
           find: foundAt - loadedAt,
           total: foundAt - start
         },
-        result,
+        ...result,
         updatedAt: new Date().toISOString()
       };
     } catch (error) {
