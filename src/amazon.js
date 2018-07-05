@@ -74,7 +74,7 @@ const extract = ({ document, window: { URL } }, { asin }) => {
     // TODO: parse other categories later
     categories: () => [].map.call(
       $s('#wayfinding-breadcrumbs_feature_div li>.a-list-item>a'),
-      e => [e.href.match(/node=(\d+)/)[1], e.textContent.trim()]
+      e => ({ node: e.href.match(/node=(\d+)/)[1], title: e.textContent.trim() })
     )
   }].map(product => Object.entries(product).reduce((o, [k, f]) => ({
     ...o,
@@ -89,32 +89,42 @@ const extract = ({ document, window: { URL } }, { asin }) => {
 };
 
 
-export const scrape = async (asin: string) => {
+export const scrape = async (asins: Array<string>) => {
   const chrome = new Chrome();
   await chrome.start();
 
-  const url = `https://www.amazon.com/dp/${asin}?psc=1`;
-
   const start = Date.now();
-  const { connectedAt, loadedAt } = await chrome.navigate({ url });
-  const results = await chrome.evaluate(extract, { asin });
-  const foundAt = Date.now();
+
+  const results = await Promise.all(asins.map(async asin => {
+    try {
+      const target = await chrome.newTab();
+      const { connectedAt, loadedAt } = await chrome.navigate(target, {
+        url: `https://www.amazon.com/dp/${asin}?psc=1`
+      });
+      const result = await chrome.evaluate(target, extract, { asin });
+      const foundAt = Date.now();
+      await chrome.closeTab(target);
+      return {
+        asin,
+        elapsed: {
+          connect: connectedAt - start,
+          fetch: loadedAt - connectedAt,
+          find: foundAt - loadedAt,
+          total: foundAt - start
+        },
+        result,
+        updatedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      return {
+        asin,
+        error: error.message,
+        updatedAt: new Date().toISOString()
+      };
+    }
+  }));
 
   console.dir(results, { depth: null });
 
-  return {
-    chrome,
-    results: {
-      asin,
-      elapsed: {
-        connect: connectedAt - start,
-        fetch: loadedAt - connectedAt,
-        find: foundAt - loadedAt,
-        total: foundAt - start
-      },
-      totalResults: results.length,
-      results,
-      updatedAt: new Date().toISOString()
-    }
-  };
+  return { chrome, results };
 };

@@ -10,15 +10,18 @@ import { randomUserAgent } from './user-agents';
 
 export default class Chrome {
   runs: number = 0;
-  protocol: {
-    Page: Object,
-    Runtime: Object,
-    DOM: Object,
-    Emulation: Object
-  };
-  listener: EventEmitter = new EventEmitter();
+  protocols: {
+    [id: string]: {
+      Page: Object,
+      Runtime: Object,
+      DOM: Object,
+      Emulation: Object
+    }
+  } = {};
+  listeners: { [id: string]: EventEmitter } = {};
   flags: Array<string> = [];
   kill: Function = () => { throw Error('Not implemented'); };
+  port: number;
 
   constructor({
     headless = !!process.env.HEADLESS,
@@ -57,53 +60,64 @@ export default class Chrome {
   async start() {
     const chrome = await this.launch();
     this.kill = () => chrome.kill();
+    this.port = chrome.port;
 
     console.log('Chrome started with port', chrome.port);
+    return chrome.pid;
+  }
 
-    const tabs = await CDP.List({ port: chrome.port });
-    // console.log(tabs.find(t => t.type === 'page'));
-    this.protocol = await new Promise((resolve, reject) =>
-      CDP({ port: chrome.port, target: tabs.find(t => t.type === 'page') }, protocol => resolve(protocol))
+  async newTab() {
+    const target = await new Promise((resolve, reject) =>
+      CDP.New((err, target) => err ? reject(err) : resolve(target)));
+
+    // const tabs = await CDP.List({ port: this.port });
+
+    this.protocols[target.id] = await new Promise((resolve, reject) =>
+      CDP({ port: this.port, target }, protocol => resolve(protocol))
         .on('error', err => reject(Error('Cannot connect to Chrome:' + err)))
     );
 
-    const { Page, Runtime } = this.protocol;
+    const { Page, Runtime } = this.protocols[target.id];
     await Promise.all([Page.enable(), Runtime.enable()]);
 
     // Page.loadEventFired((...args) => {
     //   this.listener.emit('pageLoaded', ...args);
     // });
 
+    this.listeners[target.id] = new EventEmitter();
     Page.domContentEventFired((...args) => {
-      this.listener.emit('domContentEventFired', ...args);
+      this.listeners[target.id].emit(`domContentEventFired[${target.id}]`, ...args);
     });
 
-    return chrome.pid;
+    return target.id;
   }
 
-  untilLoaded() {
+  untilLoaded(target: string) {
     return new Promise(resolve => {
       const listener = event => () => {
-        this.listener.removeListener(event, listener(event));
+        this.listeners[target].removeListener(event, listener(event));
         console.log('New event:', event);
         resolve();
       };
-      this.listener.on('domContentEventFired', listener('domContentEventFired'));
+      this.listeners[target].on(
+        `domContentEventFired[${target}]`,
+        listener(`domContentEventFired[${target}]`)
+      );
     });
   }
 
-  async navigate({ url }: { url: string }) {
-    await this.protocol.Page.navigate({ url });
+  async navigate(target: string, { url }: { url: string }) {
+    await this.protocols[target].Page.navigate({ url });
     const connectedAt = Date.now();
-    await this.untilLoaded();
+    await this.untilLoaded(target);
     const loadedAt = Date.now();
     this.runs += 1;
 
     return { connectedAt, loadedAt };
   }
 
-  async evaluate(fn: Function, context: Object = {}, evaluateArgs: Object = {}) {
-    const { Runtime } = this.protocol;
+  async evaluate(target: string, fn: Function, context: Object = {}, evaluateArgs: Object = {}) {
+    const { Runtime } = this.protocols[target];
     const expression = `(${fn.toString()})({ document, window }, ${JSON.stringify(context)})`;
     const result = await Runtime.evaluate({ expression, returnByValue: true, ...evaluateArgs });
     // logger.info('Expression:');
@@ -113,14 +127,14 @@ export default class Chrome {
     return result.result.value;
   }
 
-  evaluateAsync(fn: Function, context: Object = {}) {
-    return this.evaluate(fn, context, { awaitPromise: true });
+  evaluateAsync(target: string, fn: Function, context: Object = {}) {
+    return this.evaluate(target, fn, context, { awaitPromise: true });
   }
 
-  async screenshot({ width = 1440, height = 900 }: { width: number, height: number } = {}) {
+  async screenshot(target: string, { width = 1440, height = 900 }: { width: number, height: number } = {}) {
     // If the `full` CLI option was passed, we need to measure the height of
     // the rendered page and use Emulation.setVisibleSize
-    const { DOM, Emulation, Page } = this.protocol;
+    const { DOM, Emulation, Page } = this.protocols[target];
     await DOM.enable();
 
     const deviceMetrics = {
@@ -158,5 +172,17 @@ export default class Chrome {
     //     }
     //   }
     // ));
+  }
+
+  async closeTab(target: string) {
+    delete this.protocols[target];
+    delete this.listeners[target];
+
+    return new Promise((resolve, reject) =>
+      CDP.Close({ id: target }, err => err ? reject(err) : resolve()));
+  }
+
+  async closeAllTabs() {
+    await Promise.all(Object.keys(this.protocols).map(target => this.closeTab(target)));
   }
 }
