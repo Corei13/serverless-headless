@@ -22,6 +22,15 @@ const extract = ({ document, window: { URL } }, { asin }) => {
     // parent,
     title: () => $t('#productTitle'),
 
+    parent: () => {
+      const variationDataRaw = $t('#twisterJsInitializer_feature_div');
+      const { parentAsin } = new Function('return' + variationDataRaw.substring(
+        variationDataRaw.indexOf('var dataToReturn = ') + 19,
+        variationDataRaw.indexOf('return dataToReturn;')
+      ))();
+      return parentAsin;
+    },
+
     brand: [
       () => $t('#bylineInfo'),
       () => new URL($('#brand').href).searchParams.get('field-lbr_brands_browse-bin')
