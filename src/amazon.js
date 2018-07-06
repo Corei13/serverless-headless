@@ -19,7 +19,7 @@ const extract = ({ document, window: { URL } }, { asin }) => {
       '#detailBullets li',
       '#detailBullets tr',
     ].join(',')),
-    e => e.textContent.trim().replace(/\s+/g, ' ')
+    e => e.innerText.trim().replace(/\s+/g, ' ')
   );
 
   return [{
