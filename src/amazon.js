@@ -53,7 +53,10 @@ const extract = ({ document, window: { URL } }, { asin }) => {
       () => productDetails.find(d => d.includes('Shipping Weight')),
       () => productDetails.find(d => d.includes('Item Weight')),
     ],
-    dimensions: () => productDetails.find(d => d.includes('Product Dimensions')),
+    dimensions: [
+      () => productDetails.find(d => d.includes('Package Dimensions')),
+      () => productDetails.find(d => d.includes('Product Dimensions')),
+    ],
 
     images: () => [].map.call(
       $s('#altImages li:not(.aok-hidden) img'),
