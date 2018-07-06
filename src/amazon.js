@@ -97,9 +97,16 @@ const extract = ({ document, window: { URL } }, { asin }) => {
     [k]: (() => {
       const errors = [];
       for (const g of Array.isArray(f) ? f: [f]) {
-        try { return { success: true, value: g() }; } catch (e) { errors.push(e.message); }
+        try {
+          const value = g();
+          if (value !== undefined && value !== null) {
+            return { success: true, value };
+          }
+        } catch (e) {
+          errors.push(e.message);
+        }
       }
-      return { success: false, errors };
+      return { success: errors.length === 0, errors };
     })()
   }), {})).pop();
 };
