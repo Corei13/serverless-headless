@@ -13,7 +13,11 @@ const extract = ({ document, window: { URL } }, { asin }) => {
     $s([
       '#detailBullets_feature_div>ul>li',
       '#detail-bullets .content>ul>li',
-      '#productDetails_detailBullets_sections1>tbody>tr'
+      '#productDetails_detailBullets_sections1>tbody>tr',
+      '#prodDetails tr',
+      '#prodDetails li',
+      '#detailBullets li',
+      '#detailBullets tr',
     ].join(',')),
     e => e.textContent.trim().replace(/\s+/g, ' ')
   );
