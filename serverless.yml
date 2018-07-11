@@ -49,11 +49,11 @@ package:
     - lib/**
 
 functions:
-  # test:
-  #   description: serverless-headless/lambda test
-  #   memorySize: 1536
-  #   timeout: 30
-  #   handler: lib/handler.test
+  test:
+    description: serverless-headless/lambda test
+    memorySize: 1536
+    timeout: 10
+    handler: lib/handler.test
   #
   #   events:
   #     - http:

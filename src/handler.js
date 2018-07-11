@@ -46,10 +46,11 @@ export const test = async (event: Object, context: Object, callback: Function) =
         : `https://www.amazon.com/s/ref=sr_pg_${page}?fst=as:off&rh=i:aps,k:${keyword},p_85:2470955011&page=${page}&keywords=${keyword}&ie=UTF8&qid=${ctime}`;
 
     const start = Date.now();
-    const { connectedAt, loadedAt } = await chrome.navigate({ url });
-    const results = await chrome.evaluate(extract);
+    const target = await chrome.newTab();
+    const { connectedAt, loadedAt } = await chrome.navigate(target, { url });
+    const results = await chrome.evaluate(target, extract);
     const foundAt = Date.now();
-    await chrome.kill();
+    await chrome.closeTab(target);
 
     callback(null, {
       statusCode: 200,
@@ -70,12 +71,6 @@ export const test = async (event: Object, context: Object, callback: Function) =
         updatedAt: new Date().toISOString()
       })
     });
-
-    await Promise.all(
-      fs.readdirSync('/tmp')
-        .filter(f => f.includes('headless') || f.includes('lighthouse'))
-        .map(dir => new Promise((resolve, reject) =>
-          rimraf(`/tmp/${dir}`, (err) => err ? reject(err) : resolve()))));
 
   } catch (err) {
     callback(err);
