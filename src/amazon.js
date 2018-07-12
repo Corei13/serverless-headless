@@ -18,9 +18,22 @@ const extract = ({ document, window: { URL } }, { asin }) => {
       '#prodDetails li',
       '#detailBullets li',
       '#detailBullets tr',
+      '#tech-specs-desktop tr'
     ].join(',')),
     e => e.innerText.trim().replace(/\s+/g, ' ')
   );
+
+  const variationDetails = (() => {
+    try {
+      const variationDataRaw = $t('#twisterJsInitializer_feature_div');
+      return new Function('return' + variationDataRaw.substring(
+        variationDataRaw.indexOf('var dataToReturn = ') + 19,
+        variationDataRaw.indexOf('return dataToReturn;')
+      ))();
+    } catch (e) {
+      return {};
+    }
+  })();
 
   return [{
     // parent,
@@ -50,32 +63,31 @@ const extract = ({ document, window: { URL } }, { asin }) => {
 
     // salePrice,
     price: () => $('#priceblock_ourprice') && $t('#priceblock_ourprice'),
+    dealPrice: () => $('#priceblock_dealprice') && $t('#priceblock_dealprice'),
     listPrice: () => $('#listPriceLegalMessage') &&
       $('#listPriceLegalMessage').previousElementSibling.textContent.trim(),
 
     weight: [
       () => productDetails.find(d => d.includes('Shipping Weight')),
       () => productDetails.find(d => d.includes('Item Weight')),
+      () => productDetails.find(d => d.includes('Weight')),
     ],
     dimensions: [
       () => productDetails.find(d => d.includes('Package Dimensions')),
       () => productDetails.find(d => d.includes('Product Dimensions')),
+      () => productDetails.find(d => d.includes('Size')),
     ],
 
     images: () => [].map.call(
       $s('#altImages li:not(.aok-hidden) img'),
-      e => e.src.replace('_US40_', '_UL900_')
+      e => e.src
     ).filter(u => u.includes('/images/I/')),
 
     attributes: () => {
-      const variationDataRaw = $t('#twisterJsInitializer_feature_div');
       const {
         dimensionValuesDisplayData: { [asin]: dimensionsValue = [] } = {},
         dimensionsDisplay: dimensionsName = []
-      } = new Function('return' + variationDataRaw.substring(
-        variationDataRaw.indexOf('var dataToReturn = ') + 19,
-        variationDataRaw.indexOf('return dataToReturn;')
-      ))();
+      } = variationDetails;
       return dimensionsName.map((name, index) => ({ name, value: dimensionsValue[index] }));
     },
 
@@ -86,6 +98,9 @@ const extract = ({ document, window: { URL } }, { asin }) => {
         '#desktop-dp-sims_hardlines-day0-sims-feature>div'
       ].join(', ')
     ).getAttribute('data-a-carousel-options')).ajax.id_list,
+
+    siblings: () =>
+      Object.keys(variationDetails.asinVariationValues).filter(a => a !== asin),
 
     // TODO: parse other categories later
     categories: () => [].map.call(
